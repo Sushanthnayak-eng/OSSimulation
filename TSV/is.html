@@ -4,101 +4,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thread Scheduling Visualizer — Pthreads Demo</title>
+    <title>THREAD SCHEDULER // SYSTEM OVERRIDE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <div class="bg-grid"></div>
+
+    <!-- INTRO ANIMATION & TUTORIAL -->
+    <div id="introOverlay">
+        <div class="falling-ball">P1</div>
+        <div class="tutorial-box">
+            <h1>THREAD SCHEDULER</h1>
+            <p>
+                Welcome to the Thread Scheduling System.<br><br>
+                In this simulation, <strong>Threads</strong> are lightweight processes that share CPU resources.
+                <br>
+                Unlike full Processes, threads switch context faster and share the same memory space.
+                <br>
+                Use this dashboard to create threads and visualize how the CPU schedules them using algorithms like
+                <strong>FIFO</strong>, <strong>Round Robin</strong>, and <strong>Priority</strong>.
+            </p>
+            <button class="btn-start-intro" onclick="closeIntro()">INITIALIZE INTERFACE</button>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="logo">⚡</div>
-                <div class="header-text">
-                    <h1>Thread Scheduling Visualizer</h1>
-                    <p class="subtitle">Real-time Pthreads Execution & Scheduling Demo</p>
-                </div>
+        <header>
+            <div class="logo-area">
+                <span class="logo-icon">⚡</span>
+                <h1 class="glitch">THREAD // SCHEDULER</h1>
+            </div>
+            <div class="sys-time">
+                <span>SYSTEM CLOCK: </span>
+                <span id="currentTime" class="clock-val">0</span>
+                <span class="unit">ms</span>
             </div>
         </header>
 
-        <!-- Scheduling Algorithm Selection -->
-        <div class="algorithm-bar">
-            <div class="algorithm-group">
-                <label class="algorithm-label">Scheduling Algorithm:</label>
-                <select id="schedulingAlgorithm" class="algorithm-select">
-                    <option value="fifo">FIFO (First In First Out)</option>
-                    <option value="roundrobin">Round Robin</option>
-                    <option value="priority">Priority-Based</option>
-                </select>
-            </div>
-            <div class="quantum-group" id="quantumGroup">
-                <label class="algorithm-label">Time Quantum:</label>
-                <input type="number" id="timeQuantum" min="1" value="3" class="quantum-input">
-            </div>
-            <div class="speed-group">
-                <label class="algorithm-label">Speed:</label>
-                <select id="simulationSpeed" class="speed-select">
-                    <option value="1000">Slow</option>
-                    <option value="500" selected>Normal</option>
-                    <option value="250">Fast</option>
-                    <option value="100">Very Fast</option>
-                </select>
-            </div>
-        </div>
+        <div class="main-layout">
+            <!-- LEFT PANEL: CONFIGURATION -->
+            <aside class="sidebar glass-panel">
+                <div class="panel-header">
+                    <h2><span class="icon">🔌</span> THREAD INPUT</h2>
+                </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Left Panel: Thread Creation -->
-            <div class="left-panel">
-                <div class="panel-section">
-                    <h2 class="panel-title">🧵 Create Thread</h2>
-
-                    <div class="input-form">
-                        <div class="form-group">
-                            <label>Thread Name:</label>
-                            <input type="text" id="threadName" placeholder="T1" />
+                <div class="input-group">
+                    <div class="row">
+                        <div class="col">
+                            <label>NAME</label>
+                            <input type="text" id="threadName" placeholder="T1" class="cyber-input" />
                         </div>
-
-                        <div class="form-group">
-                            <label>Arrival Time:</label>
-                            <input type="number" id="arrivalTime" min="0" value="0" />
+                        <div class="col">
+                            <label>ARRIVAL</label>
+                            <input type="number" id="arrivalTime" min="0" value="0" class="cyber-input" />
                         </div>
-
-                        <div class="form-group">
-                            <label>Burst Time:</label>
-                            <input type="number" id="burstTime" min="1" value="5" />
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label>BURST</label>
+                            <input type="number" id="burstTime" min="1" value="5" class="cyber-input" />
                         </div>
-
-                        <div class="form-group">
-                            <label>Priority:</label>
-                            <input type="number" id="priority" min="1" max="10" value="5" />
-                            <small>(1=Highest, 10=Lowest)</small>
+                        <div class="col">
+                            <label>PRIORITY</label>
+                            <input type="number" id="priority" min="1" max="10" value="5" class="cyber-input" />
                         </div>
-
-                        <div class="button-group">
-                            <button id="addThreadBtn" class="btn btn-primary">
-                                ➕ Add Thread
-                            </button>
-                            <button id="clearThreadsBtn" class="btn btn-danger">
-                                🗑️ Clear All
-                            </button>
-                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button id="addThreadBtn" class="btn btn-add">ADD THREAD</button>
                     </div>
                 </div>
 
-                <!-- Thread Table -->
-                <div class="panel-section">
-                    <h3 class="section-title">Thread List</h3>
-                    <div class="table-wrapper">
-                        <table class="thread-table">
+                <div class="algo-config" style="margin-top: 20px;">
+                    <label>SCHEDULING ALGORITHM</label>
+                    <select id="schedulingAlgorithm" class="cyber-select">
+                        <option value="fifo">FIFO // FIRST IN FIRST OUT</option>
+                        <option value="roundrobin">RR // ROUND ROBIN</option>
+                        <option value="priority">PRIO // PRIORITY</option>
+                    </select>
+
+                    <div id="quantumGroup" class="quantum-box" style="margin-top: 10px; display: none;">
+                        <label>TIME QUANTUM</label>
+                        <input type="number" id="timeQuantum" min="1" value="3" class="cyber-input" />
+                    </div>
+
+                    <div style="margin-top: 10px;">
+                        <label>SPEED</label>
+                        <select id="simulationSpeed" class="cyber-select">
+                            <option value="1000">SLOW</option>
+                            <option value="500" selected>NORMAL</option>
+                            <option value="250">FAST</option>
+                            <option value="100">VERY FAST</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Process Table -->
+                <div class="process-list-container">
+                    <h3>THREAD QUEUE</h3>
+                    <div class="table-scroll">
+                        <table class="cyber-table">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Arrival</th>
-                                    <th>Burst</th>
-                                    <th>Priority</th>
-                                    <th>State</th>
-                                    <th>Action</th>
+                                    <th>NAME</th>
+                                    <th>AT</th>
+                                    <th>BT</th>
+                                    <th>PR</th>
+                                    <th>STATUS</th>
+                                    <th>ACT</th>
                                 </tr>
                             </thead>
                             <tbody id="threadTableBody">
@@ -108,111 +127,105 @@
                     </div>
                 </div>
 
-                <!-- Simulation Controls -->
-                <div class="panel-section">
-                    <h3 class="section-title">Simulation Controls</h3>
-                    <div class="control-buttons">
-                        <button id="startBtn" class="btn btn-success btn-large">
-                            ▶️ Start Simulation
-                        </button>
-                        <button id="pauseBtn" class="btn btn-warning btn-large" disabled>
-                            ⏸️ Pause
-                        </button>
-                        <button id="stepBtn" class="btn btn-secondary btn-large">
-                            ⏭️ Step
-                        </button>
-                        <button id="resetBtn" class="btn btn-danger btn-large">
-                            🔄 Reset
-                        </button>
-                    </div>
-
-                    <div class="time-display">
-                        <div class="time-label">Current Time:</div>
-                        <div id="currentTime" class="time-value">0</div>
-                    </div>
+                <div class="global-controls">
+                    <button id="startBtnAction" class="btn btn-execute">INITIALIZE SYSTEM</button>
+                    <button id="clearThreadsBtn" class="btn btn-danger">PURGE ALL</button>
                 </div>
-            </div>
+            </aside>
 
-            <!-- Center Panel: CPU Visualization -->
-            <div class="center-panel">
-                <!-- CPU Execution -->
-                <div class="panel-section">
-                    <h2 class="panel-title">💻 CPU Execution</h2>
-                    <div class="cpu-container">
-                        <div id="cpuSlot" class="cpu-slot">
-                            <div class="cpu-idle">
-                                <div class="idle-icon">💤</div>
-                                <div class="idle-text">CPU IDLE</div>
+            <!-- MAIN VISUALIZATION AREA -->
+            <main class="visual-deck">
+                <!-- TOP DECK: CPU & READY QUEUE -->
+                <div class="top-deck">
+                    <!-- CPU Visualizer -->
+                    <div class="cpu-stage glass-panel">
+                        <div class="panel-header">
+                            <h3><span class="icon">🧠</span> CPU CORE</h3>
+                        </div>
+                        <div class="cpu-socket">
+                            <div class="cpu-chip border-gradient" id="cpuSlot">
+                                <div class="cpu-inner">
+                                    <span class="label">EXECUTING</span>
+                                    <h1>IDLE</h1>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Timeline / Gantt Chart -->
-                <div class="panel-section">
-                    <h3 class="section-title">📊 Execution Timeline</h3>
-                    <div class="timeline-container">
-                        <div id="timelineCanvas" class="timeline-canvas">
-                            <!-- Timeline will be drawn here -->
+                    <!-- Ready Queue Visualizer -->
+                    <div class="queue-stage glass-panel">
+                        <div class="panel-header">
+                            <h3><span class="icon">🚥</span> READY BUFFER</h3>
+                        </div>
+                        <div class="queue-track" id="readyQueue">
+                            <div class="empty-msg">BUFFER EMPTY</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Thread Progress Indicators -->
-                <div class="panel-section">
-                    <h3 class="section-title">📈 Thread Progress</h3>
-                    <div id="progressContainer" class="progress-container">
-                        <!-- Progress bars will be added here -->
+                <!-- CONTROLS & GANTT -->
+                <div class="control-deck glass-panel" id="executionControls">
+                    <div class="playback-controls">
+                        <!-- Re-mapped buttons to script logic -->
+                        <button id="startBtn" class="btn btn-play" style="display:none;">▶ START</button>
+                        <button id="pauseBtn" class="btn btn-pause" disabled>⏸ PAUSE</button>
+                        <button id="stepBtn" class="btn btn-step">⏭ STEP</button>
+                        <button id="resetBtn" class="btn btn-reset">↺ RESET</button>
                     </div>
-                </div>
-            </div>
 
-            <!-- Right Panel: Queues & Event Log -->
-            <div class="right-panel">
-                <!-- Ready Queue -->
-                <div class="panel-section">
-                    <h3 class="section-title">📋 Ready Queue</h3>
-                    <div id="readyQueue" class="queue-container">
-                        <div class="queue-empty">Empty</div>
-                    </div>
-                </div>
-
-                <!-- Blocked Queue -->
-                <div class="panel-section">
-                    <h3 class="section-title">🚫 Blocked Queue</h3>
-                    <div id="blockedQueue" class="queue-container">
-                        <div class="queue-empty">Empty</div>
+                    <div class="thread-ops" style="display: flex; gap: 10px;">
+                        <button id="blockThreadBtn" class="btn btn-danger"
+                            style="width: auto; margin:0; font-size: 0.8rem;" disabled>BLOCK RUNNING</button>
+                        <button id="wakeThreadBtn" class="btn btn-add" style="width: auto; margin:0; font-size: 0.8rem;"
+                            disabled>WAKE BLOCKED</button>
+                        <button id="terminateThreadBtn" class="btn btn-danger"
+                            style="width: auto; margin:0; font-size: 0.8rem;" disabled>KILL RUNNING</button>
                     </div>
                 </div>
 
-                <!-- Thread Operations -->
-                <div class="panel-section">
-                    <h3 class="section-title">🎮 Thread Operations</h3>
-                    <div class="operation-buttons">
-                        <button id="blockThreadBtn" class="btn btn-warning btn-small" disabled>
-                            🚫 Block Running Thread
-                        </button>
-                        <button id="wakeThreadBtn" class="btn btn-success btn-small" disabled>
-                            ✅ Wake First Blocked
-                        </button>
-                        <button id="terminateThreadBtn" class="btn btn-danger btn-small" disabled>
-                            ❌ Terminate Running
-                        </button>
+                <div class="gantt-deck glass-panel">
+                    <div class="panel-header">
+                        <h3><span class="icon">📊</span> EXECUTION TIMELINE</h3>
+                    </div>
+                    <div id="timelineCanvas" class="gantt-track">
+                        <div style="padding: 20px; color: #555;">TIMELINE AWAITING DATA...</div>
                     </div>
                 </div>
 
-                <!-- Event Log -->
-                <div class="panel-section">
-                    <h3 class="section-title">📝 Event Log</h3>
-                    <div id="eventLog" class="event-log">
-                        <div class="log-entry initial">System initialized. Add threads to begin.</div>
+                <!-- Extra Panel: Blocked Queue -->
+                <div class="glass-panel" style="min-height: 120px; margin-top: 20px;">
+                    <div class="panel-header">
+                        <h3><span class="icon">🚫</span> BLOCKED QUEUE</h3>
+                    </div>
+                    <div id="blockedQueue" class="queue-track">
+                        <div class="empty-msg">EMPTY</div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     </div>
 
+    <!-- Hidden element to bridge script logic -->
+    <div id="progressContainer" style="display: none;"></div>
+    <div id="eventLog" style="display: none;"></div>
+
     <script src="script.js"></script>
+    <script>
+        // Bridge script to handle UI differences
+        document.getElementById('startBtnAction').addEventListener('click', function () {
+            document.getElementById('startBtn').click();
+        });
+
+        // Intro Animation Logic
+        function closeIntro() {
+            const overlay = document.getElementById('introOverlay');
+            overlay.style.transition = 'opacity 1s ease';
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 1000);
+        }
+    </script>
 </body>
 
 </html>
