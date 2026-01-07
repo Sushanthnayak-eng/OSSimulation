@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU SCHEDULER // SYSTEM OVERRIDE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="bg-grid"></div>
+    <div class="container">
+        <header>
+            <div class="logo-area">
+                <span class="logo-icon">💠</span>
+                <h1 class="glitch">OS // SCHEDULER</h1>
+            </div>
+            <div class="sys-time">
+                <span>SYSTEM CLOCK: </span>
+                <span id="currentTime" class="clock-val">0</span>
+                <span class="unit">ms</span>
+            </div>
+        </header>
+
+        <div class="main-layout">
+
+            <!-- LEFT PANEL: CONFIGURATION -->
+            <aside class="sidebar glass-panel">
+                <div class="panel-header">
+                    <h2><span class="icon">⚡</span> INPUT STREAM</h2>
+                </div>
+
+                <div class="input-group">
+                    <div class="row">
+                        <div class="col">
+                            <label>ID</label>
+                            <input type="text" id="processId" placeholder="P1" class="cyber-input" />
+                        </div>
+                        <div class="col">
+                            <label>ARRIVAL</label>
+                            <input type="number" id="arrivalTime" min="0" placeholder="0" class="cyber-input" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label>BURST</label>
+                            <input type="number" id="burstTime" min="1" placeholder="5" class="cyber-input" />
+                        </div>
+                        <div class="col">
+                            <label>PRIORITY</label>
+                            <input type="number" id="priority" min="1" placeholder="1" class="cyber-input" />
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button id="addProcessBtn" class="btn btn-add">ADD</button>
+                        <button id="loadDefaultBtn" class="btn btn-load">DEFAULT</button>
+                    </div>
+                </div>
+
+                <div class="algo-config">
+                    <label>CORE ALGORITHM</label>
+                    <select id="algorithmSelect" class="cyber-select">
+                        <option value="fcfs">FCFS // FIRST COME</option>
+                        <option value="sjf">SJF // SHORTEST JOB</option>
+                        <option value="srtf">SRTF // REMAINING TIME</option>
+                        <option value="priority">PRIO // PRIORITY</option>
+                        <option value="rr">RR // ROUND ROBIN</option>
+                    </select>
+
+                    <div id="quantumRow" class="quantum-box" style="display:none;">
+                        <label>TIME QUANTUM</label>
+                        <input type="number" id="timeQuantum" min="1" value="2" class="cyber-input" />
+                    </div>
+                </div>
+
+                <!-- Process Table (Updated for Dynamic Values) -->
+                <div class="process-list-container">
+                    <h3>PROCESS QUEUE</h3>
+                    <div class="table-scroll">
+                        <table id="processTable" class="cyber-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>AT</th>
+                                    <th>BT</th>
+                                    <th>PR</th>
+                                    <th>REM</th>
+                                    <th>STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="processTableBody">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="global-controls">
+                    <button id="runSimulationBtn" class="btn btn-execute">INITIALIZE SYSTEM</button>
+                    <button id="clearAllBtn" class="btn btn-danger">PURGE ALL</button>
+                </div>
+            </aside>
+
+            <!-- MAIN VISUALIZATION AREA -->
+            <main class="visual-deck">
+
+                <!-- TOP DECK: CPU & READY QUEUE -->
+                <div class="top-deck">
+                    <!-- CPU Visualizer -->
+                    <div class="cpu-stage glass-panel">
+                        <div class="panel-header">
+                            <h3><span class="icon">🧠</span> CORE PROCESSOR</h3>
+                        </div>
+                        <div class="cpu-socket">
+                            <div class="cpu-chip border-gradient" id="cpuChip">
+                                <div class="cpu-inner">
+                                    <span class="label">EXECUTING</span>
+                                    <h1 id="cpuProcessDisplay">IDLE</h1>
+                                    <div class="cpu-load-bar">
+                                        <div class="load-fill" id="cpuLoadBar"></div>
+                                    </div>
+                                </div>
+                                <div class="cpu-glow"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ready Queue Visualizer -->
+                    <div class="queue-stage glass-panel">
+                        <div class="panel-header">
+                            <h3><span class="icon">🚥</span> READY BUFFER</h3>
+                        </div>
+                        <div class="queue-track" id="readyQueueVisual">
+                            <div class="empty-msg">BUFFER EMPTY</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTROLS & GANTT -->
+                <div class="control-deck glass-panel" id="executionControls" style="display:none;">
+                    <div class="playback-controls">
+                        <button id="startBtn" class="btn btn-play">▶ EXECUTE</button>
+                        <button id="pauseBtn" class="btn btn-pause">⏸ HOLD</button>
+                        <button id="stepBtn" class="btn btn-step">⏭ STEP</button>
+                        <button id="resetBtn" class="btn btn-reset">↺ REBOOT</button>
+                    </div>
+                    <div class="status-indicators">
+                        <div class="stat-item">
+                            <span class="lbl">AVG WAIT</span>
+                            <span id="avgWT" class="val">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="lbl">AVG TURNAROUND</span>
+                            <span id="avgTAT" class="val">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gantt-deck glass-panel">
+                    <div class="panel-header">
+                        <h3><span class="icon">📊</span> EXECUTION TIMELINE</h3>
+                    </div>
+                    <div id="ganttChart" class="gantt-track">
+                        <div class="empty-msg">AWAITING SEQUENCE...</div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

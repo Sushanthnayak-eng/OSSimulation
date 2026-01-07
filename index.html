@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operating System Simulation Lab</title>
+    <style>
+        /* ===== GLOBAL STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header .subtitle {
+            font-size: 1.3em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ===== SECTION MANAGEMENT ===== */
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* ===== DASHBOARD GRID ===== */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            padding: 20px;
+        }
+
+        /* ===== MODULE CARDS ===== */
+        .module-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .module-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .module-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .module-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .module-card h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .module-card p {
+            color: #666;
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            min-height: 48px;
+        }
+
+        .module-card .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .module-card .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* ===== SIMULATOR PAGE ===== */
+        .simulator-page {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .simulator-page h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .simulator-page .description {
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .simulator-content {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .simulator-content .placeholder-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .simulator-content .placeholder-text {
+            color: #999;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .simulator-content .placeholder-subtext {
+            color: #bbb;
+            font-size: 1em;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .back-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-center {
+            text-align: center;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            header .subtitle {
+                font-size: 1em;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+
+            .module-card {
+                padding: 20px;
+            }
+
+            .simulator-page {
+                padding: 20px;
+            }
+
+            .simulator-page h2 {
+                font-size: 1.8em;
+            }
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            opacity: 0.9;
+        }
+
+        footer p {
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>🖥️ Operating System Simulation Lab</h1>
+        <p class="subtitle">Interactive Learning Platform for OS Concepts</p>
+    </header>
+
+    <div class="container">
+        <!-- ===== MAIN DASHBOARD ===== -->
+        <section id="dashboard" class="section active">
+            <div class="dashboard-grid">
+                <!-- Module 1: Process Scheduling -->
+                <div class="module-card" onclick="window.location.href='CPUSC/algo.html'">
+                    <span class="module-icon">⚙️</span>
+                    <h3>Process Scheduling Algorithms</h3>
+                    <p>Visualize FCFS, SJF, Round Robin, Priority scheduling with preemptive and non-preemptive modes
+                    </p>
+                    <button class="btn">Open Simulator</button>
+                </div>
+
+                <!-- Module 2: Multithreading Models -->
+                <div class="module-card" data-module="multithreading">
+                    <span class="module-icon">🧵</span>
+                    <h3>Multithreading Models</h3>
+                    <p>Explore Many-to-One, One-to-One, and Many-to-Many threading models with interactive diagrams</p>
+                    <button class="btn">Open Simulator</button>
+                </div>
+
+                <!-- Module 3: Thread Scheduling -->
+                <div class="module-card" data-module="thread-scheduling">
+                    <span class="module-icon">📊</span>
+                    <h3>Thread Scheduling Visualizer</h3>
+                    <p>Demonstrate Pthreads creation, execution, and scheduling in real-time visualization</p>
+                    <button class="btn">Open Simulator</button>
+                </div>
+
+                <!-- Module 4: Dining Philosophers -->
+                <div class="module-card" data-module="dining-philosophers">
+                    <span class="module-icon">🍽️</span>
+                    <h3>Dining Philosophers Problem</h3>
+                    <p>Simulate the classic concurrency problem with deadlock detection and resolution strategies</p>
+                    <button class="btn">Open Simulator</button>
+                </div>
+
+                <!-- Module 5: Producer-Consumer -->
+                <div class="module-card" data-module="producer-consumer">
+                    <span class="module-icon">🔄</span>
+                    <h3>Producer-Consumer Problem</h3>
+                    <p>Visualize bounded buffer synchronization with semaphores and mutex implementation</p>
+                    <button class="btn">Open Simulator</button>
+                </div>
+
+                <!-- Module 6: Readers-Writers -->
+                <div class="module-card" data-module="readers-writers">
+                    <span class="module-icon">📖</span>
+                    <h3>Readers-Writers Problem</h3>
+                    <p>Explore concurrent read/write access with reader and writer priority solutions</p>
+                    <button class="btn">Open Simulator</button>
+                </div>
+
+                <!-- Module 7: Memory Allocation -->
+                <div class="module-card" data-module="memory-allocation">
+                    <span class="module-icon">💾</span>
+                    <h3>Contiguous Memory Allocation</h3>
+                    <p>Compare First-fit, Best-fit, and Worst-fit memory allocation algorithms with fragmentation
+                        analysis</p>
+                    <button class="btn">Open Simulator</button>
+                </div>
+
+                <!-- Module 8: Page Replacement -->
+                <div class="module-card" data-module="page-replacement">
+                    <span class="module-icon">📄</span>
+                    <h3>Page Replacement Algorithms</h3>
+                    <p>Simulate FIFO, LRU, Optimal, Second-Chance, and LFU page replacement strategies</p>
+                    <button class="btn">Open Simulator</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SIMULATOR PAGES (PLACEHOLDERS) ===== -->
+
+        <!-- Process Scheduling Simulator -->
+        <section id="process-scheduling" class="section simulator-page">
+            <h2>⚙️ Process Scheduling Algorithms</h2>
+            <p class="description">Interactive simulator for CPU scheduling algorithms including FCFS, SJF, SRTF, Round
+                Robin, and Priority scheduling with support for both preemptive and non-preemptive modes.</p>
+            <div class="simulator-content">
+                <div class="placeholder-icon">⚙️</div>
+                <p class="placeholder-text">Simulator will be loaded here</p>
+                <p class="placeholder-subtext">This module will demonstrate various CPU scheduling algorithms with Gantt
+                    charts and performance metrics</p>
+            </div>
+            <div class="btn-center">
+                <button class="back-btn" onclick="navigateToSection('dashboard')">← Back to Main Menu</button>
+            </div>
+        </section>
+
+        <!-- Multithreading Models Simulator -->
+        <section id="multithreading" class="section simulator-page">
+            <h2>🧵 Multithreading Models</h2>
+            <p class="description">Explore the relationship between user threads and kernel threads through visual
+                representation of Many-to-One, One-to-One, and Many-to-Many threading models.</p>
+            <div class="simulator-content">
+                <div class="placeholder-icon">🧵</div>
+                <p class="placeholder-text">Simulator will be loaded here</p>
+                <p class="placeholder-subtext">This module will show thread mapping models with interactive diagrams</p>
+            </div>
+            <div class="btn-center">
+                <button class="back-btn" onclick="navigateToSection('dashboard')">← Back to Main Menu</button>
+            </div>
+        </section>
+
+        <!-- Thread Scheduling Visualizer -->
+        <section id="thread-scheduling" class="section simulator-page">
+            <h2>📊 Thread Scheduling Visualizer</h2>
+            <p class="description">Demonstrate Pthreads creation, execution, and scheduling with real-time visualization
+                of thread states and transitions.</p>
+            <div class="simulator-content">
+                <div class="placeholder-icon">📊</div>
+                <p class="placeholder-text">Simulator will be loaded here</p>
+                <p class="placeholder-subtext">This module will visualize pthread operations and scheduling behavior</p>
+            </div>
+            <div class="btn-center">
+                <button class="back-btn" onclick="navigateToSection('dashboard')">← Back to Main Menu</button>
+            </div>
+        </section>
+
+        <!-- Dining Philosophers Simulator -->
+        <section id="dining-philosophers" class="section simulator-page">
+            <h2>🍽️ Dining Philosophers Problem</h2>
+            <p class="description">Classic concurrency problem simulation showing philosophers thinking and eating with
+                visual representation of chopstick allocation, deadlock scenarios, and resolution strategies.</p>
+            <div class="simulator-content">
+                <div class="placeholder-icon">🍽️</div>
+                <p class="placeholder-text">Simulator will be loaded here</p>
+                <p class="placeholder-subtext">This module will animate the dining philosophers problem with deadlock
+                    detection</p>
+            </div>
+            <div class="btn-center">
+                <button class="back-btn" onclick="navigateToSection('dashboard')">← Back to Main Menu</button>
+            </div>
+        </section>
+
+        <!-- Producer-Consumer Simulator -->
+        <section id="producer-consumer" class="section simulator-page">
+            <h2>🔄 Producer-Consumer Problem</h2>
+            <p class="description">Visualize the bounded buffer problem with producers generating items and consumers
+                removing them, demonstrating synchronization using semaphores and mutexes.</p>
+            <div class="simulator-content">
+                <div class="placeholder-icon">🔄</div>
+                <p class="placeholder-text">Simulator will be loaded here</p>
+                <p class="placeholder-subtext">This module will show bounded buffer operations with synchronization
+                    primitives</p>
+            </div>
+            <div class="btn-center">
+                <button class="back-btn" onclick="navigateToSection('dashboard')">← Back to Main Menu</button>
+            </div>
+        </section>
+
+        <!-- Readers-Writers Simulator -->
+        <section id="readers-writers" class="section simulator-page">
+            <h2>📖 Readers-Writers Problem</h2>
+            <p class="description">Explore concurrent database access scenarios where multiple readers can access
+                simultaneously but writers need exclusive access, with different priority solutions.</p>
+            <div class="simulator-content">
+                <div class="placeholder-icon">📖</div>
+                <p class="placeholder-text">Simulator will be loaded here</p>
+                <p class="placeholder-subtext">This module will demonstrate reader-writer synchronization with priority
+                    schemes</p>
+            </div>
+            <div class="btn-center">
+                <button class="back-btn" onclick="navigateToSection('dashboard')">← Back to Main Menu</button>
+            </div>
+        </section>
+
+        <!-- Memory Allocation Simulator -->
+        <section id="memory-allocation" class="section simulator-page">
+            <h2>💾 Contiguous Memory Allocation</h2>
+            <p class="description">Compare memory allocation strategies including First-fit, Best-fit, and Worst-fit
+                algorithms with visual representation of memory blocks and fragmentation analysis.</p>
+            <div class="simulator-content">
+                <div class="placeholder-icon">💾</div>
+                <p class="placeholder-text">Simulator will be loaded here</p>
+                <p class="placeholder-subtext">This module will visualize memory allocation strategies and fragmentation
+                </p>
+            </div>
+            <div class="btn-center">
+                <button class="back-btn" onclick="navigateToSection('dashboard')">← Back to Main Menu</button>
+            </div>
+        </section>
+
+        <!-- Page Replacement Simulator -->
+        <section id="page-replacement" class="section simulator-page">
+            <h2>📄 Page Replacement Algorithms</h2>
+            <p class="description">Simulate virtual memory page replacement strategies including FIFO, LRU, Optimal,
+                Second-Chance (Clock), and LFU algorithms with page fault analysis.</p>
+            <div class="simulator-content">
+                <div class="placeholder-icon">📄</div>
+                <p class="placeholder-text">Simulator will be loaded here</p>
+                <p class="placeholder-subtext">This module will demonstrate page replacement algorithms with fault
+                    counting</p>
+            </div>
+            <div class="btn-center">
+                <button class="back-btn" onclick="navigateToSection('dashboard')">← Back to Main Menu</button>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>© 2024 Operating System Simulation Lab | Educational Interactive Platform</p>
+    </footer>
+
+    <script>
+        // ============================================================================
+        // NAVIGATION SYSTEM
+        // ============================================================================
+
+        // Navigate to a specific section
+        function navigateToSection(sectionId) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show the target section
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+
+                // Scroll to top
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // ============================================================================
+        // MODULE CARD CLICK HANDLERS
+        // ============================================================================
+
+        // Add click event listeners to all module cards
+        document.addEventListener('DOMContentLoaded', function () {
+            const moduleCards = document.querySelectorAll('.module-card');
+
+            moduleCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    const moduleId = this.getAttribute('data-module');
+                    navigateToSection(moduleId);
+                });
+
+                // Add hover effect sound feedback (optional)
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-10px)';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+
+            // Add keyboard navigation support
+            document.addEventListener('keydown', function (e) {
+                // Press Escape to go back to dashboard
+                if (e.key === 'Escape') {
+                    const currentSection = document.querySelector('.section.active');
+                    if (currentSection && currentSection.id !== 'dashboard') {
+                        navigateToSection('dashboard');
+                    }
+                }
+            });
+        });
+
+        // ============================================================================
+        // UTILITY FUNCTIONS
+        // ============================================================================
+
+        // Get current active section
+        function getCurrentSection() {
+            const activeSection = document.querySelector('.section.active');
+            return activeSection ? activeSection.id : null;
+        }
+
+        // Check if on dashboard
+        function isOnDashboard() {
+            return getCurrentSection() === 'dashboard';
+        }
+
+        // Browser back button support
+        window.addEventListener('popstate', function (e) {
+            if (e.state && e.state.section) {
+                navigateToSection(e.state.section);
+            } else {
+                navigateToSection('dashboard');
+            }
+        });
+
+        // Initialize history state
+        history.replaceState({ section: 'dashboard' }, '', '#dashboard');
+
+        // Update history when navigating
+        const originalNavigate = navigateToSection;
+        navigateToSection = function (sectionId) {
+            originalNavigate(sectionId);
+            history.pushState({ section: sectionId }, '', '#' + sectionId);
+        };
+
+        // ============================================================================
+        // LOADING ANIMATION (Optional Enhancement)
+        // ============================================================================
+
+        // Add loading state to buttons
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('.btn, .back-btn');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    // Add a brief loading state
+                    const originalText = this.textContent;
+                    this.textContent = 'Loading...';
+                    this.style.opacity = '0.7';
+
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                        this.style.opacity = '1';
+                    }, 300);
+                });
+            });
+        });
+
+        // ============================================================================
+        // CONSOLE INFO (Development Helper)
+        // ============================================================================
+
+        console.log('%c Operating System Simulation Lab ', 'background: #667eea; color: white; font-size: 20px; padding: 10px;');
+        console.log('%c Available Modules: ', 'color: #667eea; font-size: 14px; font-weight: bold;');
+        console.log('1. Process Scheduling Algorithms');
+        console.log('2. Multithreading Models');
+        console.log('3. Thread Scheduling Visualizer');
+        console.log('4. Dining Philosophers Problem');
+        console.log('5. Producer-Consumer Problem');
+        console.log('6. Readers-Writers Problem');
+        console.log('7. Contiguous Memory Allocation');
+        console.log('8. Page Replacement Algorithms');
+        console.log('%c Navigation: Click any module card or use navigateToSection("module-id") ', 'color: #999; font-style: italic;');
+    </script>
+</body>
+
+</html>
