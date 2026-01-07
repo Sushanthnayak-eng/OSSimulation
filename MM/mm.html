@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multithreading Models Simulator</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="logo">🧵</div>
+                <div class="header-text">
+                    <h1>Multithreading Models Simulator</h1>
+                    <p>Explore Many-to-One, One-to-One, and Many-to-Many threading models with interactive diagrams</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Model Selection Tabs -->
+        <div class="tabs-container">
+            <button class="tab-button active" data-model="many-to-one">
+                <span class="tab-icon">🔗</span>
+                <span>Many-to-One</span>
+            </button>
+            <button class="tab-button" data-model="one-to-one">
+                <span class="tab-icon">↔️</span>
+                <span>One-to-One</span>
+            </button>
+            <button class="tab-button" data-model="many-to-many">
+                <span class="tab-icon">🔀</span>
+                <span>Many-to-Many</span>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel: Interactive Diagram -->
+            <div class="diagram-panel">
+                <div class="panel-header">
+                    <h2>Interactive Thread Mapping Diagram</h2>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="controls">
+                    <button id="addThreadBtn" class="btn btn-primary">
+                        <span>➕</span> Add User Thread
+                    </button>
+                    <button id="removeThreadBtn" class="btn btn-warning">
+                        <span>➖</span> Remove Thread
+                    </button>
+                    <button id="playAnimationBtn" class="btn btn-success">
+                        <span>▶️</span> Play Animation
+                    </button>
+                    <button id="resetBtn" class="btn btn-danger">
+                        <span>🔄</span> Reset Model
+                    </button>
+                </div>
+
+                <!-- Diagram Canvas -->
+                <div class="diagram-container">
+                    <div class="thread-section user-threads-section">
+                        <div class="section-header">
+                            <h3>User Level</h3>
+                            <p class="section-label">User Threads</p>
+                        </div>
+                        <div id="userThreads" class="threads-container">
+                            <!-- User threads will be added here dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Connection Lines Canvas -->
+                    <svg id="connectionsCanvas" class="connections-canvas">
+                        <!-- Connection lines will be drawn here -->
+                    </svg>
+
+                    <div class="thread-section kernel-threads-section">
+                        <div class="section-header">
+                            <h3>Kernel Level</h3>
+                            <p class="section-label">Kernel Threads</p>
+                        </div>
+                        <div id="kernelThreads" class="threads-container">
+                            <!-- Kernel threads will be added here dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thread Count Display -->
+                <div class="thread-count">
+                    <div class="count-item">
+                        <span class="count-label">User Threads:</span>
+                        <span id="userThreadCount" class="count-value">0</span>
+                    </div>
+                    <div class="count-item">
+                        <span class="count-label">Kernel Threads:</span>
+                        <span id="kernelThreadCount" class="count-value">0</span>
+                    </div>
+                    <div class="count-item">
+                        <span class="count-label">Mapping Ratio:</span>
+                        <span id="mappingRatio" class="count-value">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Model Information -->
+            <div class="info-panel">
+                <div class="panel-header">
+                    <h2 id="modelTitle">Many-to-One Model</h2>
+                </div>
+
+                <div class="info-content">
+                    <!-- Description -->
+                    <div class="info-section">
+                        <h3>📖 Description</h3>
+                        <p id="modelDescription">
+                            In the Many-to-One model, multiple user-level threads are mapped to a single kernel thread.
+                        </p>
+                    </div>
+
+                    <!-- How It Works -->
+                    <div class="info-section">
+                        <h3>⚙️ How It Works</h3>
+                        <div id="modelWorking"></div>
+                    </div>
+
+                    <!-- Advantages -->
+                    <div class="info-section">
+                        <h3>✅ Advantages</h3>
+                        <ul id="modelAdvantages"></ul>
+                    </div>
+
+                    <!-- Disadvantages -->
+                    <div class="info-section">
+                        <h3>❌ Disadvantages</h3>
+                        <ul id="modelDisadvantages"></ul>
+                    </div>
+
+                    <!-- Real-World Examples -->
+                    <div class="info-section">
+                        <h3>🌍 Real-World Examples</h3>
+                        <div id="modelExamples"></div>
+                    </div>
+
+                    <!-- Use Cases -->
+                    <div class="info-section">
+                        <h3>💡 Best Used When</h3>
+                        <ul id="modelUseCases"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-message" id="statusMessage">
+                Ready to explore threading models! Select a model and add threads to begin.
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

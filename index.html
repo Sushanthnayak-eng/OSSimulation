@@ -304,7 +304,7 @@
                 </div>
 
                 <!-- Module 2: Multithreading Models -->
-                <div class="module-card" data-module="multithreading">
+                <div class="module-card" onclick="window.location.href='MM/mm.html'">
                     <span class="module-icon">🧵</span>
                     <h3>Multithreading Models</h3>
                     <p>Explore Many-to-One, One-to-One, and Many-to-Many threading models with interactive diagrams</p>
@@ -312,7 +312,7 @@
                 </div>
 
                 <!-- Module 3: Thread Scheduling -->
-                <div class="module-card" data-module="thread-scheduling">
+                <div class="module-card" onclick="window.location.href='TSV/is.html'">
                     <span class="module-icon">📊</span>
                     <h3>Thread Scheduling Visualizer</h3>
                     <p>Demonstrate Pthreads creation, execution, and scheduling in real-time visualization</p>
@@ -344,7 +344,7 @@
                 </div>
 
                 <!-- Module 7: Memory Allocation -->
-                <div class="module-card" data-module="memory-allocation">
+                <div class="module-card" onclick="window.location.href='MM/mm.html'">
                     <span class="module-icon">💾</span>
                     <h3>Contiguous Memory Allocation</h3>
                     <p>Compare First-fit, Best-fit, and Worst-fit memory allocation algorithms with fragmentation
@@ -532,7 +532,9 @@
             moduleCards.forEach(card => {
                 card.addEventListener('click', function () {
                     const moduleId = this.getAttribute('data-module');
-                    navigateToSection(moduleId);
+                    if (moduleId) {
+                        navigateToSection(moduleId);
+                    }
                 });
 
                 // Add hover effect sound feedback (optional)
