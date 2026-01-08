@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS Memory Allocator - FITS Simulator</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b1021;
+            --panel-bg: rgba(20, 25, 40, 0.9);
+            --accent-cyan: #00f3ff;
+            --accent-pink: #ff00ff;
+            --accent-green: #00ff66;
+            --accent-yellow: #ffee00;
+            --text-color: #e0e6ed;
+            --border-color: #2a3b55;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(118, 75, 162, 0.2) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(102, 126, 234, 0.2) 0%, transparent 20%);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(11, 16, 33, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 243, 255, 0.1);
+            transform: translateX(-5px);
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+
+        /* ===== CONTROLS PANEL ===== */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 15px;
+            color: var(--accent-cyan);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            color: #8892b0;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .btn-cyan {
+            background: var(--accent-cyan);
+            color: #000;
+        }
+
+        .btn-pink {
+            background: var(--accent-pink);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        /* ===== MEMORY VISUALIZER ===== */
+        .visualizer-area {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .memory-visual {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 40px 20px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .block-container {
+            display: flex;
+            width: 100%;
+            height: 100px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #050810;
+        }
+
+        .memory-block {
+            height: 100%;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        .memory-block.free {
+            background: repeating-linear-gradient(45deg, #1a2035, #1a2035 10px, #161c2e 10px, #161c2e 20px);
+        }
+
+        .memory-block.allocated {
+            color: #000;
+        }
+
+        .block-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(135deg, #00f3ff 0%, #00a8ff 100%);
+            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.4);
+            transition: width 0.5s ease-in-out;
+            z-index: 1;
+        }
+
+        .memory-block * {
+            z-index: 2;
+        }
+
+        .block-label {
+            font-size: 0.7rem;
+            position: absolute;
+            top: -25px;
+            color: #8892b0;
+            white-space: nowrap;
+        }
+
+        .block-size {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .block-process {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        /* ===== STATS & TABLE ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-family: 'Orbitron';
+            font-size: 1.5rem;
+            color: var(--accent-yellow);
+        }
+
+        .table-card {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #2a3b55;
+            font-size: 0.9rem;
+        }
+
+        th {
+            font-family: 'Orbitron';
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+        }
+
+        .status-allocated {
+            color: var(--accent-green);
+        }
+
+        .status-failed {
+            color: var(--accent-pink);
+        }
+
+        /* Animation */
+        @keyframes pulse-yellow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 238, 0, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 238, 0, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 238, 0, 0);
+            }
+        }
+
+        .searching {
+            border: 2px solid var(--accent-yellow);
+            animation: pulse-yellow 1s infinite;
+            z-index: 10;
+        }
+
+        .console-log {
+            background: #000;
+            color: var(--accent-green);
+            font-size: 0.8rem;
+            padding: 10px;
+            height: 100px;
+            overflow-y: auto;
+            border-radius: 5px;
+            border: 1px solid #333;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <span>💾</span> FITS ALLOCATOR
+        </div>
+        <a href="../index.html" class="back-btn">
+            <span>↩</span> SYSTEM DASHBOARD
+        </a>
+    </header>
+
+    <div class="container">
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="card">
+                <div class="panel-title">Initialization</div>
+                <div class="input-group">
+                    <label>MEMORY BLOCK SIZES (e.g. 100, 500, 200, 300, 600)</label>
+                    <input type="text" id="memBlocks" value="100, 500, 200, 300, 600">
+                </div>
+                <div class="input-group">
+                    <label>ALGORITHM</label>
+                    <select id="algo">
+                        <option value="first">FIRST FIT</option>
+                        <option value="best">BEST FIT</option>
+                        <option value="worst">WORST FIT</option>
+                    </select>
+                </div>
+                <button class="btn btn-cyan" onclick="resetMemory()">INIT MEMORY</button>
+            </div>
+
+            <div class="card">
+                <div class="panel-title">Allocation Request</div>
+                <div class="input-group">
+                    <label>PROCESS SIZE</label>
+                    <input type="number" id="procSize" value="212">
+                </div>
+                <button class="btn btn-pink" id="allocBtn" onclick="requestAllocation()">ALLOCATE PROCESS</button>
+                <button class="btn btn-outline" onclick="clearMemory()">CLEAR ALL</button>
+            </div>
+
+            <div class="card">
+                <div class="panel-title">Logs</div>
+                <div class="console-log" id="logs">
+                    Ready to initialize memory system...
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizer Area -->
+        <div class="visualizer-area">
+            <div class="memory-visual">
+                <div class="block-container" id="blockContainer">
+                    <!-- Blocks injected here -->
+                </div>
+                <div id="labelsContainer" style="position: relative; width: 100%;"></div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">TOTAL MEMORY</div>
+                    <div class="stat-val" id="totalMem">0 KB</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">TOTAL USED</div>
+                    <div class="stat-val" id="usedMem">0 KB</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">FRAGMENTS</div>
+                    <div class="stat-val" id="fragCount">0</div>
+                </div>
+            </div>
+
+            <div class="card table-card">
+                <div class="panel-title">Allocation History</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Process</th>
+                            <th>Requested</th>
+                            <th>Block Index</th>
+                            <th>Internal Frag</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <!-- History injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let memory = [];
+        let history = [];
+        let procCounter = 1;
+
+        function resetMemory() {
+            const input = document.getElementById('memBlocks').value;
+            const sizes = input.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n > 0);
+
+            if (sizes.length === 0) {
+                alert("Please enter valid sizes!");
+                return;
+            }
+
+            memory = sizes.map((size, index) => ({
+                id: index,
+                totalSize: size,
+                remaining: size,
+                allocated: [],
+                originalIdx: index
+            }));
+
+            history = [];
+            procCounter = 1;
+            updateUI();
+            log("Memory system initialized with " + sizes.length + " blocks.");
+        }
+
+        async function requestAllocation() {
+            const size = parseInt(document.getElementById('procSize').value);
+            const algo = document.getElementById('algo').value;
+
+            if (isNaN(size) || size <= 0) return;
+            if (memory.length === 0) {
+                alert("Initialize memory first!");
+                return;
+            }
+
+            log("Requesting " + size + " KB using " + algo.toUpperCase() + " fit...");
+            document.getElementById('allocBtn').disabled = true;
+
+            let targetIdx = -1;
+
+            // Algorithm Logic
+            if (algo === 'first') {
+                for (let i = 0; i < memory.length; i++) {
+                    highlightBlock(i);
+                    await sleep(500);
+                    if (memory[i].remaining >= size) {
+                        targetIdx = i;
+                        break;
+                    }
+                    unhighlightBlock(i);
+                }
+            } else if (algo === 'best') {
+                let minFrag = Infinity;
+                for (let i = 0; i < memory.length; i++) {
+                    highlightBlock(i);
+                    await sleep(400);
+                    if (memory[i].remaining >= size) {
+                        let frag = memory[i].remaining - size;
+                        if (frag < minFrag) {
+                            minFrag = frag;
+                            if (targetIdx !== -1) unhighlightBlock(targetIdx);
+                            targetIdx = i;
+                            continue; // Keep it highlighted as current best
+                        }
+                    }
+                    unhighlightBlock(i);
+                }
+            } else if (algo === 'worst') {
+                let maxFrag = -1;
+                for (let i = 0; i < memory.length; i++) {
+                    highlightBlock(i);
+                    await sleep(400);
+                    if (memory[i].remaining >= size) {
+                        let frag = memory[i].remaining - size;
+                        if (frag > maxFrag) {
+                            maxFrag = frag;
+                            if (targetIdx !== -1) unhighlightBlock(targetIdx);
+                            targetIdx = i;
+                            continue; // Keep it highlighted as current worst
+                        }
+                    }
+                    unhighlightBlock(i);
+                }
+            }
+
+            if (targetIdx !== -1) {
+                const block = memory[targetIdx];
+                const frag = block.remaining - size;
+                block.allocated.push({ id: procCounter, size: size });
+                block.remaining -= size;
+
+                history.unshift({
+                    name: 'P' + procCounter,
+                    requested: size,
+                    block: targetIdx,
+                    frag: frag,
+                    status: 'SUCCESS'
+                });
+
+                log("P" + procCounter + " allocated to Block " + targetIdx + ". Fragmentation: " + frag + " KB.");
+                procCounter++;
+            } else {
+                history.unshift({
+                    name: 'P' + procCounter,
+                    requested: size,
+                    block: '-',
+                    frag: '-',
+                    status: 'FAILED'
+                });
+                log("Allocation FAILED for P" + procCounter + ". No suitable block found.");
+                procCounter++;
+            }
+
+            unhighlightAll();
+            updateUI();
+            document.getElementById('allocBtn').disabled = false;
+        }
+
+        function updateUI() {
+            const container = document.getElementById('blockContainer');
+            container.innerHTML = '';
+
+            let total = 0;
+            let used = 0;
+            let frags = 0;
+
+            memory.forEach((block, idx) => {
+                total += block.totalSize;
+
+                // Create Block Div
+                const blockDiv = document.createElement('div');
+                blockDiv.className = 'memory-block ' + (block.remaining < block.totalSize ? 'allocated' : 'free');
+                blockDiv.id = 'mb-' + idx;
+
+                // Percentage width
+                const width = (block.totalSize / memory.reduce((a, b) => a + b.totalSize, 0)) * 100;
+                blockDiv.style.width = width + '%';
+
+                // Content
+                let usedInBlock = block.totalSize - block.remaining;
+                used += usedInBlock;
+                if (block.remaining > 0 && block.remaining < block.totalSize) frags++;
+
+                let fillPercent = (usedInBlock / block.totalSize) * 100;
+
+                blockDiv.innerHTML = `
+                    <div class="block-fill" style="width: ${fillPercent}%"></div>
+                    <div class="block-label">Block ${idx}</div>
+                    <div class="block-size">${block.totalSize} KB</div>
+                    ${block.allocated.length > 0 ? `<div class="block-process">${block.allocated.map(p => 'P' + p.id).join(',')}</div>` : '<div class="block-process">FREE</div>'}
+                    <div style="font-size: 0.6rem; margin-top: 5px;">Rem: ${block.remaining}K</div>
+                `;
+
+                container.appendChild(blockDiv);
+            });
+
+            document.getElementById('totalMem').textContent = total + " KB";
+            document.getElementById('usedMem').textContent = used + " KB";
+            document.getElementById('fragCount').textContent = frags;
+
+            // Update Table
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = history.map(h => `
+                <tr>
+                    <td>${h.name}</td>
+                    <td>${h.requested} KB</td>
+                    <td>${h.block}</td>
+                    <td>${h.frag !== '-' ? h.frag + ' KB' : '-'}</td>
+                    <td class="${h.status === 'SUCCESS' ? 'status-allocated' : 'status-failed'}">${h.status}</td>
+                </tr>
+            `).join('');
+        }
+
+        function clearMemory() {
+            memory.forEach(b => {
+                b.remaining = b.totalSize;
+                b.allocated = [];
+            });
+            history = [];
+            procCounter = 1;
+            updateUI();
+            log("System cleared.");
+        }
+
+        function highlightBlock(idx) {
+            const el = document.getElementById('mb-' + idx);
+            if (el) el.classList.add('searching');
+        }
+
+        function unhighlightBlock(idx) {
+            const el = document.getElementById('mb-' + idx);
+            if (el) el.classList.remove('searching');
+        }
+
+        function unhighlightAll() {
+            document.querySelectorAll('.memory-block').forEach(el => el.classList.remove('searching'));
+        }
+
+        function log(msg) {
+            const div = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            div.prepend(entry);
+        }
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        // Init on load
+        window.onload = resetMemory;
+    </script>
+</body>
+
+</html>

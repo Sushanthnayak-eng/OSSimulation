@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readers-Writers | Fair Mode Simulation</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f1a;
+            --panel-bg: rgba(20, 26, 42, 0.95);
+            --accent-cyan: #00f3ff;
+            --accent-pink: #ff00ff;
+            --accent-green: #00ff66;
+            --accent-yellow: #ffee00;
+            --text-color: #e0e6ed;
+            --border-color: #2a344a;
+            --reader-color: #00f3ff;
+            --writer-color: #ff00ff;
+            --guard-color: #ffee00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 50% 50%, rgba(10, 20, 60, 0.3) 0%, transparent 100%),
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            color: var(--accent-cyan);
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .logo span {
+            color: var(--accent-pink);
+            text-shadow: 0 0 10px var(--accent-pink);
+        }
+
+        .fair-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 15px;
+            background: var(--accent-green);
+            color: #000;
+            border-radius: 20px;
+            font-family: 'Orbitron';
+            font-size: 0.7rem;
+            font-weight: 900;
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            gap: 20px;
+        }
+
+        /* ===== CONTROLS ===== */
+        .toolbar {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            font-family: 'Orbitron';
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: 1px solid var(--accent-cyan);
+            background: transparent;
+            color: var(--accent-cyan);
+            border-radius: 5px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 20px var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        .btn-writer {
+            border-color: var(--accent-pink);
+            color: var(--accent-pink);
+        }
+
+        .btn-writer:hover {
+            background: var(--accent-pink);
+            color: #000;
+            box-shadow: 0 0 20px var(--accent-pink);
+        }
+
+        .btn-reset {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .btn-reset:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        /* ===== GUARDS & ZONES ===== */
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .card-header {
+            font-family: 'Orbitron';
+            font-size: 0.8rem;
+            color: #8892b0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .guard-post {
+            background: #0d121f;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.4s;
+            position: relative;
+        }
+
+        .guard-post.active {
+            border-color: var(--guard-color);
+            box-shadow: 0 0 20px rgba(255, 238, 0, 0.3);
+        }
+
+        .guard-name {
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            color: var(--guard-color);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .guard-dialogue {
+            font-size: 0.8rem;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-style: italic;
+        }
+
+        .guard-post.active .guard-dialogue {
+            color: #fff;
+        }
+
+        /* Speech Bubble for funny comments */
+        .bubble {
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            color: #000;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            width: 150px;
+            font-weight: bold;
+            display: none;
+            z-index: 100;
+        }
+
+        .bubble::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #fff transparent transparent transparent;
+        }
+
+        /* ===== PAGE BUFFER ===== */
+        .buffer-node {
+            background: #050810;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .buffer-header {
+            background: #1a2235;
+            padding: 12px;
+            font-family: 'Orbitron';
+            font-size: 0.65rem;
+            display: flex;
+            justify-content: space-between;
+            color: var(--accent-cyan);
+        }
+
+        .buffer-lines {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .line.reading {
+            border-left-color: var(--reader-color);
+            background: rgba(0, 243, 255, 0.05);
+            color: var(--reader-color);
+            transform: translateX(5px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .line.writing {
+            border-left-color: var(--writer-color);
+            background: rgba(255, 0, 255, 0.1);
+            color: var(--writer-color);
+            animation: pulse 0.8s infinite;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .occupant-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Orbitron';
+            font-weight: bold;
+            display: flex;
+            gap: 4px;
+        }
+
+        .badge-r {
+            background: var(--reader-color);
+            color: #000;
+            box-shadow: 0 0 5px var(--reader-color);
+        }
+
+        .badge-w {
+            background: var(--writer-color);
+            color: #000;
+            box-shadow: 0 0 5px var(--writer-color);
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.6;
+            }
+        }
+
+        /* ===== PROCESS UNITS ===== */
+        .unit-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 100px;
+        }
+
+        .unit {
+            padding: 12px;
+            border-radius: 6px;
+            background: #161b29;
+            border: 1px solid #333;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.4s;
+        }
+
+        .unit.reader {
+            border-color: var(--reader-color);
+            color: var(--reader-color);
+        }
+
+        .unit.writer {
+            border-color: var(--writer-color);
+            color: var(--writer-color);
+        }
+
+        .unit.active {
+            box-shadow: 0 0 10px currentColor;
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .unit.waiting {
+            opacity: 0.6;
+            border-style: dashed;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
+
+        /* ===== FIGHTING & CHAOS ANIMATIONS ===== */
+        @keyframes shake-fight {
+            0% {
+                transform: translate(2px, 2px) rotate(0deg);
+            }
+
+            10% {
+                transform: translate(-2px, -3px) rotate(-2deg);
+            }
+
+            20% {
+                transform: translate(-4px, 0px) rotate(2deg);
+            }
+
+            30% {
+                transform: translate(4px, 3px) rotate(0deg);
+            }
+
+            40% {
+                transform: translate(2px, -2px) rotate(2deg);
+            }
+
+            50% {
+                transform: translate(-2px, 3px) rotate(-2deg);
+            }
+
+            60% {
+                transform: translate(-4px, 2px) rotate(0deg);
+            }
+
+            70% {
+                transform: translate(4px, 2px) rotate(-2deg);
+            }
+
+            80% {
+                transform: translate(-2px, -2px) rotate(2deg);
+            }
+
+            90% {
+                transform: translate(2px, 3px) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(2px, -3px) rotate(-2deg);
+            }
+        }
+
+        @keyframes screen-shake {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            25% {
+                transform: translate(3px, -3px);
+            }
+
+            50% {
+                transform: translate(-3px, 3px);
+            }
+
+            75% {
+                transform: translate(3px, 3px);
+            }
+
+            100% {
+                transform: translate(0, 0);
+            }
+        }
+
+        body.chaotic {
+            animation: screen-shake 0.1s infinite !important;
+            background: #200 !important;
+            transition: background 0.2s;
+        }
+
+        .guard-post.fighting {
+            border-color: #ff0000 !important;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.8) !important;
+            background: rgba(100, 0, 0, 0.3) !important;
+        }
+
+        .unit.fighting {
+            animation: shake-fight 0.3s infinite !important;
+            border-color: #ff0000 !important;
+            color: #ff3333 !important;
+            box-shadow: 0 0 20px #ff0000 !important;
+            z-index: 1000 !important;
+        }
+
+        .fighting {
+            animation: shake-fight 0.5s infinite;
+            border-color: #ff0000 !important;
+            color: #ff0000 !important;
+        }
+
+        /* ===== TERMINAL ===== */
+        .terminal {
+            grid-column: 1 / -1;
+            height: 180px;
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            color: #0f0;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            border-bottom: 1px solid #111;
+            padding-bottom: 2px;
+        }
+
+        .log-entry.reader-log {
+            color: var(--reader-color);
+        }
+
+        .log-entry.writer-log {
+            color: var(--writer-color);
+        }
+
+        .log-entry.system-log {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .log-entry.funny-log {
+            color: var(--accent-yellow);
+            font-style: italic;
+        }
+
+        /* ===== STATUS MODE ===== */
+        .mode-text {
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            text-align: center;
+            color: var(--accent-green);
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">FAIR <span>SYNX</span> PROTOCOL</div>
+        <div class="fair-badge">FAIR MODE ENABLED — NO STARVATION</div>
+        <div class="mode-text" id="statusMessage">System Standby: Waiting for nodes...</div>
+    </header>
+
+    <div class="main-container">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button class="btn" onclick="addReader()">+ Add Reader Unit</button>
+            <button class="btn btn-writer" onclick="addWriter()">+ Add Writer Unit</button>
+            <button class="btn" onclick="toggleSim()" id="simBtn">Run Simulation</button>
+            <button class="btn btn-reset" onclick="resetSim()">Factory Reset</button>
+        </div>
+
+        <!-- Left Column: Readers -->
+        <div class="card">
+            <div class="card-header">READER SQUADRON</div>
+
+            <div class="guard-post" id="mutexGuard">
+                <div class="bubble" id="mutexBubble"></div>
+                <div class="guard-name">MUTEX GUARD (R-COUNT)</div>
+                <div class="guard-dialogue" id="mutexDialogue">"Alright everyone, check-in here!"</div>
+            </div>
+
+            <div class="unit-list" id="activeReaders">
+                <div style="color: #444; text-align: center; font-size: 0.6rem;">ACTIVE READERS SCANNING...</div>
+            </div>
+        </div>
+
+        <!-- Center Column: Buffer -->
+        <div class="card" style="background: transparent; border: none; padding: 0;">
+            <div class="guard-post" id="wrGuard" style="margin-bottom: 20px;">
+                <div class="bubble" id="wrBubble"></div>
+                <div class="guard-name">WR GUARD (EXCLUSIVE CONTROLLER)</div>
+                <div class="guard-dialogue" id="wrDialogue">"Facility is wide open for business!"</div>
+            </div>
+
+            <div class="buffer-node">
+                <div class="buffer-header">
+                    <span>PAGE_BUFFER_V3.0_FAIR</span>
+                    <span id="bufferActivity">IDLE</span>
+                </div>
+                <div class="buffer-lines" id="bufferDisplay">
+                    <!-- Lines generated here -->
+                </div>
+            </div>
+
+            <div class="card-header" style="margin-top: 20px;">CENTRAL QUEUE (FAIR ACCESS)</div>
+            <div class="unit-list" id="centralQueue">
+                <!-- Waiting units in FIFO order -->
+            </div>
+        </div>
+
+        <!-- Right Column: Writers -->
+        <div class="card">
+            <div class="card-header">WRITER COMMUNE</div>
+
+            <div class="unit-list" id="activeWriter">
+                <div style="color: #444; text-align: center; font-size: 0.6rem;">ACTIVE WRITER UPDATING...</div>
+            </div>
+
+            <div style="flex: 1;"></div>
+
+            <div class="mode-text" style="color: #8892b0;">
+                Next Turn: <span id="nextTurn" style="color: var(--accent-cyan);">---</span>
+            </div>
+        </div>
+
+        <!-- Log Area -->
+        <div class="terminal" id="terminalLog">
+            <div class="log-entry system-log">Welcome to Synchronization Simulator. Fair access rules are in effect.
+            </div>
+            <div class="log-entry funny-log" style="color: #555;">(Tip: Use 'Add Writer' when readers are active to see
+                fair blocking in action!)</div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let fairQueue = []; // FIFO Global Queue
+        let currentReaders = []; // Active Reader objects
+        let currentWriter = null; // Active Writer object
+        let r_id = 1, w_id = 1;
+        let isSimRunning = false;
+        let rcount = 0;
+
+        const baseContent = [
+            "[ EMPTY SLOT ]",
+            "[ EMPTY SLOT ]",
+            "[ EMPTY SLOT ]",
+            "[ EMPTY SLOT ]",
+            "[ EMPTY SLOT ]"
+        ];
+        let bufferData = [...baseContent];
+
+        const funnyDialogue = {
+            writerBlockingReader: [
+                "WRITER: *Aggressive typing sounds* BEGONE READER! I'm creating art! 🎨",
+                "GUARD: Back off! He's got a pen and he's not afraid to use it! 🖋️",
+                "READER: Just a peek? \nWRITER: NO! IT'S A TOP SECRET DRAFT! 🤐"
+            ],
+            readerBlockingWriter: [
+                "READER: We're not moving! This buffer is COZY! 🛋️",
+                "WRITER: HEY! I have deadlines! Move it! ⏰\nGUARD: Talk to the hand! 🖐️",
+                "READER: *Sipping tea* Come back in 10 minutes, darling. ☕"
+            ],
+            guardBusy: [
+                "GUARD: STOP PUSHING! The Mutex is already sweating! 💦",
+                "READER: Let me in first!\nGUARD: I'll put you in time-out! 😠"
+            ],
+            writerWorking: [
+                "Writer is rewriting history... don't blink! 👁️",
+                "Exclusive access granted! Writer is doing the moonwalk. 💃",
+                "Writer is deleting all your hard work! Jk... or maybe? 😈"
+            ],
+            combat: [
+                "FIGHT! FIGHT! FIGHT! 🥊",
+                "Security Guard is losing his mind! 🤯",
+                "Wait line is becoming a mosh pit! 🎸"
+            ]
+        };
+
+        function addReader() {
+            const r = { id: r_id++, type: 'reader', currentLine: -1, status: 'queued' };
+            fairQueue.push(r);
+            updateUI();
+            log(`Reader ${r.id} added to the Central Queue.`, 'reader');
+        }
+
+        function addWriter() {
+            const w = { id: w_id++, type: 'writer', currentLine: -1, status: 'queued' };
+            fairQueue.push(w);
+            updateUI();
+            log(`Writer ${w.id} added to the Central Queue.`, 'writer');
+        }
+
+        async function toggleSim() {
+            if (isSimRunning) {
+                isSimRunning = false;
+                document.getElementById('simBtn').innerText = "Run Simulation";
+                log("Simulation Paused.", "system");
+            } else {
+                isSimRunning = true;
+                document.getElementById('simBtn').innerText = "Pause Simulation";
+                log("Simulation Started. Processing Global Queue...", "system");
+                processSim();
+            }
+        }
+
+        async function processSim() {
+            while (isSimRunning) {
+                if (fairQueue.length > 0) {
+                    const next = fairQueue[0];
+                    updateStatus(`Fair Mode: Serving ${next.type.toUpperCase()} ${next.id}`);
+
+                    if (next.type === 'reader') {
+                        // Readers can enter if no writer is active
+                        if (currentWriter === null) {
+                            // Multiple consecutive readers can enter if they are at the front
+                            // This keeps the 'Fair' aspect but allows parallel reading
+                            const readyReaders = [];
+                            while (fairQueue.length > 0 && fairQueue[0].type === 'reader') {
+                                readyReaders.push(fairQueue.shift());
+                            }
+                            readyReaders.forEach(r => startReader(r));
+                        } else {
+                            // Writer is busy, start a "fight"
+                            const msg = funnyDialogue.writerBlockingReader[Math.floor(Math.random() * 3)];
+                            triggerFight('wr', `READER ${next.id}: "EXCUSE ME?!" \n${msg}`);
+                            updateStatus(`BLOODSHED: Writer is defending the buffer! 🛡️`);
+                            log(`Reader ${next.id} is trying to pick a fight with Writer ${currentWriter.id}!`, 'funny-log');
+                        }
+                    } else {
+                        // Writer can enter if NO readers and NO writer active
+                        if (currentWriter === null && currentReaders.length === 0) {
+                            startWriter(fairQueue.shift());
+                        } else {
+                            // Readers are gossiping or another writer is active
+                            const msg = currentReaders.length > 0 ?
+                                `READER CORP: "GET OUT OF HERE! WE'RE READING!" 😤` :
+                                `GUARD wr: "WRESTLEMANIA IN PROGRESS! WAIT!" 🥊`;
+                            triggerFight('wr', `WRITER ${next.id}: "I HAVE DEADLINES!" \n${msg}`);
+                            updateStatus(`BRAWL: Writer ${next.id} is charging the entrance! 🏃‍♂️`);
+                            log(`Writer ${next.id} is throwing insults at the active readers!`, 'funny-log');
+                        }
+                    }
+                } else {
+                    updateStatus("All queues cleared. Waiting for nodes...");
+                    document.getElementById('nextTurn').innerText = "EMPTY";
+                }
+
+                updateUI();
+                await new Promise(r => setTimeout(r, 2200)); // SLOWER LOOP
+            }
+        }
+
+        async function triggerFight(guardId, message) {
+            const guard = document.getElementById(guardId + 'Guard');
+            guard.classList.add('fighting');
+            document.body.classList.add('chaotic');
+
+            // Apply fighting class to the first waiting unit for extra visual impact
+            const waitingUnits = document.querySelectorAll('.unit.waiting');
+            if (waitingUnits.length > 0) waitingUnits[0].classList.add('fighting');
+
+            showBubble(guardId, message);
+            setTimeout(() => {
+                guard.classList.remove('fighting');
+                document.body.classList.remove('chaotic');
+                if (waitingUnits.length > 0) waitingUnits[0].classList.remove('fighting');
+            }, 3000);
+        }
+
+        async function startReader(r) {
+            // Entry Section (Mutex simulation)
+            updateGuard('mutex', true, `"Welcome Reader ${r.id}! Step into the ring!"`);
+            await new Promise(res => setTimeout(res, 1200)); // SLOWER ENTRY
+
+            rcount++;
+            r.status = 'active';
+            currentReaders.push(r);
+
+            if (rcount === 1) {
+                updateGuard('wr', true, `"READERS IN TOWN! WRITERS, GET LOST! 🖕"`);
+                log(`Reader ${r.id} (FIRST) slammed the WR door shut.`, 'system');
+            }
+
+            updateGuard('mutex', false, `"Check-in done. Warriors present: ${rcount}"`);
+            log(`Reader ${r.id} joined the reading mosh pit.`, 'reader');
+            updateUI();
+
+            // Reading lines
+            for (let i = 0; i < bufferData.length; i++) {
+                r.currentLine = i;
+                log(`Reader ${r.id} scanning line ${i + 1}... strictly for science 👨‍🔬`, 'reader');
+                updateUI();
+                await new Promise(res => setTimeout(res, 1800)); // SLOWER READING
+            }
+
+            // Exit Section
+            updateGuard('mutex', true, `"Recording departure for Reader ${r.id}..."`);
+            await new Promise(res => setTimeout(res, 500));
+
+            rcount--;
+            currentReaders = currentReaders.filter(obj => obj !== r);
+
+            if (rcount === 0) {
+                updateGuard('wr', false, `"Last reader left. Facility is available."`);
+                log(`Last Reader ${r.id} exited. wr Guard Released.`, 'system');
+                log("Fair Mode: Shared Zone is now clear.", "funny-log");
+            }
+
+            updateGuard('mutex', false, `"Records updated. Readers scanning: ${rcount}"`);
+            updateUI();
+        }
+
+        async function startWriter(w) {
+            // Exclusive Control (wr guard)
+            isWriting = true;
+            w.status = 'active';
+            currentWriter = w;
+
+            updateGuard('wr', true, `"WRITER ${w.id} IS DOMINATING THE PAGE! 👑"`);
+            log(`Writer ${w.id} built a wall around the buffer.`, 'writer');
+            updateUI();
+
+            // Decide how many lines to process (at least 3, up to 5)
+            const linesToProcess = Math.min(Math.floor(Math.random() * 3) + 3, bufferData.length);
+
+            // Writing lines
+            for (let i = 0; i < linesToProcess; i++) {
+                w.currentLine = i;
+                const isNew = bufferData[i] === "[ EMPTY SLOT ]";
+                const actionMsg = isNew ? "creating new data... 🆕" : "hijacking existing data! 🏴‍☠️";
+
+                log(`Writer ${w.id}: ${actionMsg} (Line ${i + 1})`, 'writer');
+                updateUI();
+                await new Promise(res => setTimeout(res, 2200)); // SLOWER WRITING
+
+                const funnyPrefix = isNew ? "GENERATED" : "HIJACKED";
+                bufferData[i] = `${funnyPrefix}_BY_W${w.id}_FORCE_${Math.floor(Math.random() * 1000)}`;
+            }
+
+            log(`Writer ${w.id} dropped the mic and left the zone.`, 'writer');
+            currentWriter = null;
+            w.status = 'done';
+            updateGuard('wr', false, `"Facility doors are back on their hinges!"`);
+            updateUI();
+        }
+
+        function updateUI() {
+            // Buffer Display
+            const buf = document.getElementById('bufferDisplay');
+            buf.innerHTML = bufferData.map((line, i) => {
+                let cls = 'line';
+                let occupantBadges = "";
+
+                if (currentWriter && currentWriter.currentLine === i) {
+                    cls += ' writing';
+                    occupantBadges += `<span class="occupant-badge badge-w">W${currentWriter.id}</span>`;
+                }
+
+                const readersOnLine = currentReaders.filter(r => r.currentLine === i);
+                if (readersOnLine.length > 0) {
+                    cls += ' reading';
+                    readersOnLine.forEach(r => {
+                        occupantBadges += `<span class="occupant-badge badge-r">R${r.id}</span>`;
+                    });
+                }
+
+                return `
+                    <div class="${cls}">
+                        <span>${line}</span>
+                        <div style="display: flex; gap: 5px;">${occupantBadges}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('bufferActivity').innerText = currentWriter ? "WRITING..." : (rcount > 0 ? "READING..." : "IDLE");
+
+            // Global Queue
+            const q = document.getElementById('centralQueue');
+            q.innerHTML = fairQueue.map(item => `
+                <div class="unit ${item.type} waiting">
+                    <span>${item.type.toUpperCase()} ${item.id}</span>
+                    <span>(QUEUED)</span>
+                </div>
+            `).join('');
+
+            // Active Areas
+            const activeR = document.getElementById('activeReaders');
+            if (currentReaders.length > 0) {
+                activeR.innerHTML = currentReaders.map(r => `
+                    <div class="unit reader active">
+                        <span>READER ${r.id}</span>
+                        <span>LINE ${r.currentLine + 1}</span>
+                    </div>
+                `).join('');
+            } else { activeR.innerHTML = '<div style="color: #444; text-align: center; font-size: 0.6rem;">ACTIVE READERS SCANNING...</div>'; }
+
+            const activeW = document.getElementById('activeWriter');
+            if (currentWriter) {
+                activeW.innerHTML = `
+                    <div class="unit writer active">
+                        <span>WRITER ${currentWriter.id}</span>
+                        <span>LINE ${currentWriter.currentLine + 1}</span>
+                    </div>
+                `;
+            } else { activeW.innerHTML = '<div style="color: #444; text-align: center; font-size: 0.6rem;">ACTIVE WRITER UPDATING...</div>'; }
+
+            // Next Turn
+            if (fairQueue.length > 0) {
+                const next = fairQueue[0];
+                const nextEl = document.getElementById('nextTurn');
+                nextEl.innerText = `${next.type.toUpperCase()} ${next.id}`;
+                nextEl.style.color = (next.type === 'writer') ? 'var(--accent-pink)' : 'var(--accent-cyan)';
+            }
+        }
+
+        function updateGuard(type, active, dialogue) {
+            const el = document.getElementById(type + 'Guard');
+            const d = document.getElementById(type + 'Dialogue');
+            if (active) el.classList.add('active');
+            else el.classList.remove('active');
+            d.innerText = dialogue;
+        }
+
+        function showBubble(guard, message) {
+            const b = document.getElementById(guard + 'Bubble');
+            b.innerText = message;
+            b.style.display = 'block';
+            setTimeout(() => { b.style.display = 'none'; }, 2000);
+        }
+
+        function log(msg, type) {
+            const t = document.getElementById('terminalLog');
+            const d = document.createElement('div');
+            d.className = `log-entry ${type}-log`;
+            d.innerHTML = `<span>[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+            t.prepend(d);
+        }
+
+        function updateStatus(msg) {
+            document.getElementById('statusMessage').innerText = msg;
+        }
+
+        function resetSim() {
+            location.reload();
+        }
+
+        // Initialize display
+        updateUI();
+    </script>
+</body>
+
+</html>

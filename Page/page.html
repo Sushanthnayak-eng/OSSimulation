@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS Memory Manager - Gamified Simulation</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b1021;
+            --panel-bg: rgba(20, 25, 40, 0.9);
+            --accent-cyan: #00f3ff;
+            --accent-pink: #ff00ff;
+            --accent-green: #00ff66;
+            --accent-yellow: #ffee00;
+            --text-color: #e0e6ed;
+            --border-color: #2a3b55;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(118, 75, 162, 0.2) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(102, 126, 234, 0.2) 0%, transparent 20%);
+            color: var(--text-color);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 50px;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(11, 16, 33, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+            transform: translateX(-5px);
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            gap: 30px;
+        }
+
+        /* ===== CONFIGURATION PANEL ===== */
+        .config-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .config-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-pink);
+            box-shadow: 0 0 10px var(--accent-pink);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            color: var(--accent-pink);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #8892b0;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            color: var(--accent-cyan);
+            padding: 12px;
+            border-radius: 5px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, #ff00ff 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 0, 255, 0.4);
+        }
+
+        /* ===== VISUALIZATION STAGE ===== */
+        .stage-container {
+            display: none;
+            /* Hidden by default */
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+
+        .stage-container.active {
+            display: grid;
+        }
+
+        /* Stats Sidebar */
+        .stats-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-family: 'Orbitron', sans-serif;
+            margin: 10px 0;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #8892b0;
+            text-transform: uppercase;
+        }
+
+        .gauge-container {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            background: var(--accent-cyan);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Main Game Area */
+        .game-area {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* 1. Request Stream */
+        .request-stream {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .stream-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            color: var(--accent-yellow);
+            font-family: 'Orbitron';
+            font-size: 0.8rem;
+            margin-right: 10px;
+        }
+
+        .page-block {
+            min-width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #556;
+            transition: all 0.3s;
+        }
+
+        .page-block.active {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--accent-cyan);
+            transform: scale(1.1);
+            border: none;
+        }
+
+        .page-block.future {
+            color: #fff;
+        }
+
+        /* 2. Main Memory Core */
+        .memory-core {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            min-height: 200px;
+            position: relative;
+        }
+
+        .memory-label {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-family: 'Orbitron';
+            color: #8892b0;
+            font-size: 0.9rem;
+        }
+
+        .frame-slot {
+            width: 100px;
+            height: 120px;
+            background: #0f1424;
+            border: 2px dashed #444;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.5s;
+        }
+
+        .frame-slot.filled {
+            border: 2px solid var(--accent-cyan);
+            background: rgba(0, 243, 255, 0.05);
+            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.1);
+        }
+
+        .frame-slot.hit {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 102, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 102, 0.3);
+            animation: pulse-green 0.5s;
+        }
+
+        .frame-slot.fault-target {
+            border-color: var(--accent-pink);
+            background: rgba(255, 0, 255, 0.1);
+            animation: shake 0.5s;
+        }
+
+        .frame-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            z-index: 2;
+        }
+
+        .frame-id {
+            position: absolute;
+            bottom: 5px;
+            font-size: 0.7rem;
+            color: #555;
+            text-transform: uppercase;
+        }
+
+        .frame-info {
+            position: absolute;
+            top: -25px;
+            font-size: 0.7rem;
+            color: var(--accent-yellow);
+            white-space: nowrap;
+        }
+
+        /* 3. Control Deck */
+        .control-deck {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            background: #1a2035;
+            color: white;
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: 'Orbitron';
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            background: #2a3b55;
+            border-color: var(--accent-cyan);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .control-btn.primary {
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+        }
+
+        .control-btn.primary:hover:not(:disabled) {
+            background: #00d0db;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }
+
+        /* 4. Console Log */
+        .console-log {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            height: 100px;
+            overflow-y: auto;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column-reverse;
+            /* Newest at bottom visually */
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            border-left: 2px solid #555;
+            padding-left: 10px;
+        }
+
+        .log-entry.hit {
+            border-color: var(--accent-green);
+            color: #aaffaa;
+        }
+
+        .log-entry.fault {
+            border-color: var(--accent-pink);
+            color: #ffaaff;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px) rotate(-5deg);
+            }
+
+            50% {
+                transform: translateX(5px) rotate(5deg);
+            }
+
+            75% {
+                transform: translateX(-5px) rotate(-5deg);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse-green {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 30px var(--accent-green);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Result Table */
+        .table-container {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+            color: #ccc;
+        }
+
+        th {
+            background: #1a2035;
+            color: var(--accent-cyan);
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            position: sticky;
+            top: 0;
+        }
+
+        tr.active-row {
+            background: rgba(0, 243, 255, 0.1);
+            border-left: 2px solid var(--accent-cyan);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .status-hit {
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+
+        .status-fault {
+            color: var(--accent-pink);
+            font-weight: bold;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .stage-container {
+                grid-template-columns: 1fr;
+            }
+
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .memory-core {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <span>💾</span> MEMORY MANAGER
+        </div>
+        <a href="../index.html" class="back-btn">
+            <span>↩</span> SYSTEM DASHBOARD
+        </a>
+    </header>
+
+    <div class="container">
+        <!-- Configuration Panel -->
+        <div class="config-panel">
+            <div class="panel-title">Simulation Parameters</div>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>REFERENCE STRING (Space separated)</label>
+                    <input type="text" id="refString" value="7 0 1 2 0 3 0 4 2 3 0 3 2"
+                        placeholder="e.g. 1 2 3 4 1 2 5 1 2 3 4 5">
+                </div>
+                <div class="input-group">
+                    <label>FRAMES</label>
+                    <input type="number" id="frameCount" value="3" min="1" max="8">
+                </div>
+                <div class="input-group">
+                    <label>ALGORITHM</label>
+                    <select id="algorithm">
+                        <option value="FIFO">FIFO</option>
+                        <option value="LRU">LRU</option>
+                        <option value="OPTIMAL">OPTIMAL</option>
+                        <option value="LFU">LFU</option>
+                    </select>
+                </div>
+                <button class="btn-run" onclick="initSimulation()">INITIALIZE SYSTEM</button>
+            </div>
+        </div>
+
+        <!-- Simulation Stage -->
+        <div class="stage-container" id="stage">
+
+            <!-- Sidebar Stats -->
+            <div class="stats-sidebar">
+                <div class="stat-card">
+                    <div class="stat-label">PAGE FAULTS</div>
+                    <div class="stat-value" id="faultsDisplay" style="color: var(--accent-pink)">0</div>
+                    <div class="gauge-container">
+                        <div class="gauge-fill" id="faultGauge" style="width: 0%; background: var(--accent-pink)"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">PAGE HITS</div>
+                    <div class="stat-value" id="hitsDisplay" style="color: var(--accent-green)">0</div>
+                    <div class="gauge-container">
+                        <div class="gauge-fill" id="hitGauge" style="width: 0%; background: var(--accent-green)"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">HIT RATIO</div>
+                    <div class="stat-value" id="ratioDisplay">0%</div>
+                </div>
+
+                <div class="console-log" id="consoleLog">
+                    <!-- Logs go here -->
+                </div>
+            </div>
+
+            <!-- Main Game Area -->
+            <div class="game-area">
+                <div class="panel-title" id="algoTitle">READY TO START</div>
+
+                <div class="request-stream" id="requestStream">
+                    <!-- Stream blocks generated here -->
+                </div>
+
+                <div class="memory-core" id="memoryCore">
+                    <!-- Frames generated here -->
+                </div>
+
+                <div class="control-deck">
+                    <button class="control-btn" id="btnPrev" onclick="prevStep()">◀ PREV</button>
+                    <button class="control-btn primary" id="btnPlay" onclick="togglePlay()">▶ START</button>
+                    <button class="control-btn" id="btnNext" onclick="nextStep()">NEXT ▶</button>
+                    <button class="control-btn" onclick="resetSim()">RESET</button>
+                </div>
+
+                <!-- Result Table -->
+                <div class="table-container">
+                    <table id="resultTable">
+                        <thead>
+                            <tr id="tableHeader">
+                                <!-- Headers generated -->
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Rows generated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        let simulationSteps = [];
+        let currentStep = 0;
+        let isPlaying = false;
+        let playInterval;
+        let speed = 1000;
+
+        // Algorithms
+        function solveFIFO(pages, frames) {
+            let memory = [];
+            let steps = [];
+            let hits = 0;
+            let faults = 0;
+
+            for (let i = 0; i < pages.length; i++) {
+                let page = pages[i];
+                let hit = memory.includes(page);
+                let replacedIndex = -1;
+                let explanation = "";
+
+                if (hit) {
+                    hits++;
+                    explanation = `Page ${page} found in Frame ${memory.indexOf(page) + 1}. HIT!`;
+                } else {
+                    faults++;
+                    if (memory.length < frames) {
+                        memory.push(page);
+                        explanation = `Memory has space. Loading Page ${page}.`;
+                    } else {
+                        // FIFO removes first element
+                        let removed = memory.shift();
+                        replacedIndex = 0; // In visual representation, we might want to track slots better, but simpler for logic to just shift
+                        // BUT for visualization we want stable slots.
+                        // Let's re-implement for stable slots tracking logic.
+                    }
+                }
+            }
+            // Re-implementing with stable slots logic below
+            return [];
+        }
+
+        class Simulator {
+            static FIFO(pages, frameCount) {
+                let memory = new Array(frameCount).fill(null);
+                let queue = []; // To track order for FIFO
+                let steps = [];
+                let hitCount = 0;
+                let faultCount = 0;
+
+                for (let i = 0; i < pages.length; i++) {
+                    let page = pages[i];
+                    let hitIndex = memory.indexOf(page);
+                    let isHit = hitIndex !== -1;
+                    let replacedIdx = -1;
+                    let replacedPage = null;
+                    let msg = "";
+
+                    if (isHit) {
+                        hitCount++;
+                        msg = `Page ${page} is already in Frame ${hitIndex + 1}. HIT!`;
+                    } else {
+                        faultCount++;
+                        // Find empty slot
+                        let emptyIdx = memory.indexOf(null);
+
+                        if (emptyIdx !== -1) {
+                            memory[emptyIdx] = page;
+                            queue.push(page);
+                            msg = `Page ${page} loaded into empty Frame ${emptyIdx + 1}.`;
+                        } else {
+                            // Replacement needed
+                            replacedPage = queue.shift();
+                            replacedIdx = memory.indexOf(replacedPage);
+                            memory[replacedIdx] = page;
+                            queue.push(page);
+                            msg = `Page Fault! ${replacedPage} was old (FIFO). Replaced by ${page} in Frame ${replacedIdx + 1}.`;
+                        }
+                    }
+
+                    steps.push({
+                        stepIndex: i,
+                        page: page,
+                        memory: [...memory],
+                        isHit: isHit,
+                        replacedIndex: isHit ? -1 : replacedIdx,
+                        hitIndex: hitIndex,
+                        hits: hitCount,
+                        faults: faultCount,
+                        explanation: msg
+                    });
+                }
+                return steps;
+            }
+
+            static LRU(pages, frameCount) {
+                let memory = new Array(frameCount).fill(null);
+                let lastUsedMap = new Map(); // page -> last step index
+                let steps = [];
+                let hitCount = 0;
+                let faultCount = 0;
+
+                for (let i = 0; i < pages.length; i++) {
+                    let page = pages[i];
+                    let hitIndex = memory.indexOf(page);
+                    let isHit = hitIndex !== -1;
+                    let replacedIdx = -1;
+                    let msg = "";
+
+                    // Update usage
+                    lastUsedMap.set(page, i);
+
+                    if (isHit) {
+                        hitCount++;
+                        msg = `Page ${page} accessed in Frame ${hitIndex + 1}. Updated usage time.`;
+                    } else {
+                        faultCount++;
+                        let emptyIdx = memory.indexOf(null);
+                        if (emptyIdx !== -1) {
+                            memory[emptyIdx] = page;
+                            msg = `Page ${page} loaded into empty Frame ${emptyIdx + 1}.`;
+                        } else {
+                            // Find LRU
+                            let lruPage = -1;
+                            let oldestStep = Infinity;
+
+                            for (let p of memory) {
+                                let lastStep = lastUsedMap.get(p);
+                                if (lastStep < oldestStep) {
+                                    oldestStep = lastStep;
+                                    lruPage = p;
+                                }
+                            }
+
+                            replacedIdx = memory.indexOf(lruPage);
+                            memory[replacedIdx] = page;
+                            msg = `Page Fault! ${lruPage} hasn't been used since step ${oldestStep}. Evicted for ${page}.`;
+                        }
+                    }
+
+                    steps.push({
+                        stepIndex: i,
+                        page: page,
+                        memory: [...memory],
+                        isHit: isHit,
+                        replacedIndex: replacedIdx,
+                        hitIndex: hitIndex,
+                        hits: hitCount,
+                        faults: faultCount,
+                        explanation: msg
+                    });
+                }
+                return steps;
+            }
+
+            static OPTIMAL(pages, frameCount) {
+                let memory = new Array(frameCount).fill(null);
+                let steps = [];
+                let hitCount = 0;
+                let faultCount = 0;
+
+                for (let i = 0; i < pages.length; i++) {
+                    let page = pages[i];
+                    let hitIndex = memory.indexOf(page);
+                    let isHit = hitIndex !== -1;
+                    let replacedIdx = -1;
+                    let msg = "";
+
+                    if (isHit) {
+                        hitCount++;
+                        msg = `Page ${page} found in Frame ${hitIndex + 1}. HIT!`;
+                    } else {
+                        faultCount++;
+                        let emptyIdx = memory.indexOf(null);
+                        if (emptyIdx !== -1) {
+                            memory[emptyIdx] = page;
+                            msg = `Page ${page} loaded into empty Frame ${emptyIdx + 1}.`;
+                        } else {
+                            // Find page not used for longest time
+                            let farthestDist = -1;
+                            let victimIdx = -1;
+                            let victimPage = -1;
+
+                            for (let m = 0; m < memory.length; m++) {
+                                let memPage = memory[m];
+                                let nextUse = -1;
+                                for (let j = i + 1; j < pages.length; j++) {
+                                    if (pages[j] === memPage) {
+                                        nextUse = j;
+                                        break;
+                                    }
+                                }
+
+                                if (nextUse === -1) {
+                                    victimIdx = m;
+                                    victimPage = memPage;
+                                    break; // Found one that is never used again
+                                }
+
+                                if (nextUse > farthestDist) {
+                                    farthestDist = nextUse;
+                                    victimIdx = m;
+                                    victimPage = memPage;
+                                }
+                            }
+
+                            replacedIdx = victimIdx;
+                            memory[replacedIdx] = page;
+                            msg = `Page Fault! ${victimPage} won't be needed for the longest time. Swapped for ${page}.`;
+                        }
+                    }
+
+                    steps.push({
+                        stepIndex: i,
+                        page: page,
+                        memory: [...memory],
+                        isHit: isHit,
+                        replacedIndex: replacedIdx,
+                        hitIndex: hitIndex,
+                        hits: hitCount,
+                        faults: faultCount,
+                        explanation: msg
+                    });
+                }
+                return steps;
+            }
+
+            static LFU(pages, frameCount) {
+                let memory = new Array(frameCount).fill(null);
+                let freqMap = new Map(); // page -> count
+                let arrivalMap = new Map(); // page -> arrival index for tie breaking
+                let steps = [];
+                let hitCount = 0;
+                let faultCount = 0;
+                let arrivalCounter = 0;
+
+                for (let i = 0; i < pages.length; i++) {
+                    let page = pages[i];
+                    let hitIndex = memory.indexOf(page);
+                    let isHit = hitIndex !== -1;
+                    let replacedIdx = -1;
+                    let msg = "";
+
+                    // Update freq
+                    freqMap.set(page, (freqMap.get(page) || 0) + 1);
+
+                    if (isHit) {
+                        hitCount++;
+                        msg = `Page ${page} accessed (Freq: ${freqMap.get(page)}). HIT!`;
+                    } else {
+                        // New arrival logic for tie breaking
+                        arrivalMap.set(page, arrivalCounter++);
+                        faultCount++;
+
+                        let emptyIdx = memory.indexOf(null);
+                        if (emptyIdx !== -1) {
+                            memory[emptyIdx] = page;
+                            msg = `Page ${page} loaded (Freq: 1).`;
+                        } else {
+                            // Find LFU
+                            let minFreq = Infinity;
+                            let victimPage = -1;
+
+                            // Candidates in memory
+                            let candidates = memory;
+
+                            // Find min freq
+                            for (let p of candidates) {
+                                if (freqMap.get(p) < minFreq) minFreq = freqMap.get(p);
+                            }
+
+                            // Filter candidates with min freq
+                            let minCandidates = candidates.filter(p => freqMap.get(p) === minFreq);
+
+                            // Tie break with FIFO (arrival time)
+                            if (minCandidates.length > 1) {
+                                let oldestArrival = Infinity;
+                                for (let p of minCandidates) {
+                                    if (arrivalMap.get(p) < oldestArrival) {
+                                        oldestArrival = arrivalMap.get(p);
+                                        victimPage = p;
+                                    }
+                                }
+                            } else {
+                                victimPage = minCandidates[0];
+                            }
+
+                            replacedIdx = memory.indexOf(victimPage);
+
+                            // Remove victim freq tracking? In strict LFU we keep counters usually, 
+                            // but for replacement policy usually we reset or just keep growing. 
+                            // Standard LFU keeps freq even if paged out? No, usually reset if global.
+                            // Let's assume standard textbook LFU: keep counters.
+
+                            // Clean up
+                            arrivalMap.delete(victimPage);
+
+                            memory[replacedIdx] = page;
+                            msg = `Page Fault! ${victimPage} used fewest times (${minFreq}). Replaced by ${page}.`;
+                        }
+                    }
+
+                    steps.push({
+                        stepIndex: i,
+                        page: page,
+                        memory: [...memory],
+                        isHit: isHit,
+                        replacedIndex: replacedIdx,
+                        hitIndex: hitIndex,
+                        hits: hitCount,
+                        faults: faultCount,
+                        explanation: msg
+                    });
+                }
+                return steps;
+            }
+        }
+
+        // Logic
+        function initSimulation() {
+            // Get Inputs
+            const refStr = document.getElementById('refString').value;
+            const frameCount = parseInt(document.getElementById('frameCount').value);
+            const algo = document.getElementById('algorithm').value;
+
+            // Parse
+            const pages = refStr.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+
+            if (pages.length === 0 || frameCount < 1) {
+                alert("Please check your inputs!");
+                return;
+            }
+
+            // Run Algo
+            switch (algo) {
+                case 'FIFO': simulationSteps = Simulator.FIFO(pages, frameCount); break;
+                case 'LRU': simulationSteps = Simulator.LRU(pages, frameCount); break;
+                case 'OPTIMAL': simulationSteps = Simulator.OPTIMAL(pages, frameCount); break;
+                case 'LFU': simulationSteps = Simulator.LFU(pages, frameCount); break;
+            }
+
+            // Setup UI
+            currentStep = -1;
+            document.getElementById('stage').classList.add('active');
+            document.getElementById('algoTitle').textContent = `RUNNING: ${algo}`;
+
+            // Build Stream Visualization
+            const streamContainer = document.getElementById('requestStream');
+            streamContainer.innerHTML = '<div class="stream-label">INCOMING ➤</div>';
+            pages.forEach((p, idx) => {
+                const el = document.createElement('div');
+                el.className = 'page-block';
+                el.id = `req-${idx}`;
+                el.textContent = p;
+                streamContainer.appendChild(el);
+            });
+
+            // Build Memory Core
+            const core = document.getElementById('memoryCore');
+            core.innerHTML = '<div class="memory-label">RAM FRAMES</div>';
+            for (let i = 0; i < frameCount; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'frame-slot';
+                slot.id = `frame-${i}`;
+                slot.innerHTML = `<span class="frame-number">-</span><span class="frame-id">F${i}</span>`;
+                core.appendChild(slot);
+            }
+
+            // Reset Stats & Controls
+            document.getElementById('consoleLog').innerHTML = '';
+            document.getElementById('btnPrev').disabled = true;
+            document.getElementById('btnNext').disabled = false;
+
+            // Build Table
+            buildTable(frameCount);
+
+            // Go to start
+            gotoStep(-1);
+        }
+
+        function buildTable(frameCount) {
+            const thead = document.getElementById('tableHeader');
+            const tbody = document.getElementById('tableBody');
+
+            // Headers
+            let headers = '<th>STEP</th><th>PAGE</th>';
+            for (let i = 0; i < frameCount; i++) {
+                headers += `<th>FRAME ${i + 1}</th>`;
+            }
+            headers += '<th>STATUS</th>';
+            thead.innerHTML = headers;
+
+            // Rows (Hidden initially, filled step by step)
+            let rowsHTML = '';
+            simulationSteps.forEach((step, idx) => {
+                rowsHTML += `<tr id="row-${idx}" style="display: none;">
+                    <td>${idx + 1}</td>
+                    <td>${step.page}</td>`;
+
+                // Memory state at this step
+                for (let i = 0; i < frameCount; i++) {
+                    let val = step.memory[i] === null ? '-' : step.memory[i];
+                    rowsHTML += `<td>${val}</td>`;
+                }
+
+                let statusClass = step.isHit ? 'status-hit' : 'status-fault';
+                let statusText = step.isHit ? 'HIT' : 'FAULT';
+                rowsHTML += `<td class="${statusClass}">${statusText}</td></tr>`;
+            });
+            tbody.innerHTML = rowsHTML;
+        }
+
+        function updateUI(stepIdx) {
+            // Table Update - Highlight active row and manage visibility
+            document.querySelectorAll('tr').forEach(r => r.classList.remove('active-row'));
+
+            // Show/Hide rows for "step by step" effect
+            simulationSteps.forEach((_, idx) => {
+                const r = document.getElementById(`row-${idx}`);
+                if (r) {
+                    r.style.display = (idx <= stepIdx) ? '' : 'none';
+                }
+            });
+
+            // If -1, reset state
+            if (stepIdx === -1) {
+                // Clear frames
+                document.querySelectorAll('.frame-slot').forEach(f => {
+                    f.classList.remove('filled', 'hit', 'fault-target');
+                    f.querySelector('.frame-number').textContent = '-';
+                    let existingInfo = f.querySelector('.frame-info');
+                    if (existingInfo) existingInfo.remove();
+                });
+                // Reset Stream
+                document.querySelectorAll('.page-block').forEach(b => b.classList.remove('active', 'future'));
+                document.querySelectorAll('.page-block').forEach(b => b.classList.add('future'));
+
+                // Stats
+                document.getElementById('faultsDisplay').textContent = 0;
+                document.getElementById('hitsDisplay').textContent = 0;
+                document.getElementById('ratioDisplay').textContent = "0%";
+                document.getElementById('faultGauge').style.width = "0%";
+                document.getElementById('hitGauge').style.width = "0%";
+                return;
+            }
+
+            const state = simulationSteps[stepIdx];
+
+            // Highlight Table Row
+            const row = document.getElementById(`row-${stepIdx}`);
+            if (row) {
+                row.classList.add('active-row');
+                row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+
+            // 1. Highlight Stream
+            document.querySelectorAll('.page-block').forEach(b => b.classList.remove('active'));
+            // Set past blocks? optional.
+            const currentBlock = document.getElementById(`req-${stepIdx}`);
+            if (currentBlock) {
+                currentBlock.classList.remove('future');
+                currentBlock.classList.add('active');
+                currentBlock.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+            }
+
+            // 2. Update Frames
+            state.memory.forEach((val, fIdx) => {
+                const frameEl = document.getElementById(`frame-${fIdx}`);
+                const numEl = frameEl.querySelector('.frame-number');
+
+                // Remove transient animations
+                frameEl.classList.remove('hit', 'fault-target');
+
+                // Remove old info labels
+                let oldInfo = frameEl.querySelector('.frame-info');
+                if (oldInfo) oldInfo.remove();
+
+                if (val !== null) {
+                    numEl.textContent = val;
+                    frameEl.classList.add('filled');
+                } else {
+                    numEl.textContent = '-';
+                    frameEl.classList.remove('filled');
+                }
+
+                // Apply animations based on current action
+                if (state.isHit && fIdx === state.hitIndex) {
+                    frameEl.classList.add('hit');
+                    addInfoLabel(frameEl, "HIT");
+                }
+
+                if (!state.isHit && fIdx === state.replacedIndex) {
+                    frameEl.classList.add('fault-target');
+                    addInfoLabel(frameEl, "REPLACED");
+                }
+                else if (!state.isHit && fIdx === state.memory.indexOf(state.page) && state.replacedIndex === -1) {
+                    // Loaded into empty
+                    frameEl.classList.add('fault-target'); // reuse pulse
+                    addInfoLabel(frameEl, "LOADED");
+                }
+            });
+
+            // 3. Stats
+            document.getElementById('faultsDisplay').textContent = state.faults;
+            document.getElementById('hitsDisplay').textContent = state.hits;
+
+            const total = state.hits + state.faults;
+            const ratio = total === 0 ? 0 : Math.round((state.hits / total) * 100);
+
+            document.getElementById('ratioDisplay').textContent = ratio + "%";
+            document.getElementById('hitGauge').style.width = ratio + "%";
+            document.getElementById('faultGauge').style.width = (100 - ratio) + "%";
+
+            // 4. Log
+            logMessage(`Step ${stepIdx + 1}: ${state.explanation}`, state.isHit ? 'hit' : 'fault');
+        }
+
+        function addInfoLabel(frameEl, text) {
+            let label = document.createElement('div');
+            label.className = 'frame-info';
+            label.textContent = text;
+            frameEl.appendChild(label);
+        }
+
+        function logMessage(msg, type) {
+            const logPanel = document.getElementById('consoleLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = msg;
+            logPanel.prepend(entry);
+        }
+
+        // Navigation
+        function gotoStep(idx) {
+            currentStep = idx;
+            updateUI(currentStep);
+
+            // Btns
+            document.getElementById('btnPrev').disabled = (currentStep < 0);
+            document.getElementById('btnNext').disabled = (currentStep >= simulationSteps.length - 1);
+        }
+
+        function nextStep() {
+            if (currentStep < simulationSteps.length - 1) {
+                gotoStep(currentStep + 1);
+            } else {
+                stopSim(); // Auto stop at end
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > -1) {
+                gotoStep(currentStep - 1);
+            }
+        }
+
+        function togglePlay() {
+            if (isPlaying) stopSim();
+            else startSim();
+        }
+
+        function startSim() {
+            isPlaying = true;
+            document.getElementById('btnPlay').textContent = "⏸ PAUSE";
+            document.getElementById('btnPlay').classList.remove('primary');
+
+            playInterval = setInterval(() => {
+                nextStep();
+            }, speed);
+        }
+
+        function stopSim() {
+            isPlaying = false;
+            document.getElementById('btnPlay').textContent = "▶ RESUME"; // or Start
+            document.getElementById('btnPlay').classList.add('primary');
+            clearInterval(playInterval);
+        }
+
+        function resetSim() {
+            stopSim();
+            initSimulation();
+        }
+
+        // Initialize with default
+        window.addEventListener('load', () => {
+            // Optional: initSimulation();
+        });
+
+    </script>
+</body>
+
+</html>
